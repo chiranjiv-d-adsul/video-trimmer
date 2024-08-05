@@ -1,0 +1,348 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+    crossorigin="anonymous"
+  />
+  <title>Trim video using Node.js and FFmpeg</title>
+</head>
+<body>
+  <div class="container mt-5">
+    <h1>Trim Video</h1>
+    <form id="trimForm" action="/trim" method="post" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label for="videoFile" class="form-label">Upload Video</label>
+        <input class="form-control" type="file" id="videoFile" name="videoFile" accept="video/*" required>
+      </div>
+      <div class="mb-3">
+        <label for="startTime" class="form-label">Start Time (seconds)</label>
+        <input class="form-control" type="number" id="startTime" name="startTime" placeholder="0" required>
+      </div>
+      <div class="mb-3">
+        <label for="endTime" class="form-label">End Time (seconds)</label>
+        <input class="form-control" type="number" id="endTime" name="endTime" placeholder="10" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Trim Video</button>
+    </form>
+  </div>
+</body>
+</html> -->
+
+<!--
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+      crossorigin="anonymous"
+    />
+    <title>Trim video in browser using ffmpeg</title>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>Trim Video</h1>
+      <div class="mb-3">
+        <label for="videoFile" class="form-label">Upload Video</label>
+        <input class="form-control" type="file" id="videoFile" accept="video/*">
+      </div>
+      <div id="timeRanges">
+        <div class="time-range mb-3">
+          <label for="startTime" class="form-label">Start Time (seconds)</label>
+          <input class="form-control" type="number" name="startTime" placeholder="0">
+          <label for="endTime" class="form-label">End Time (seconds)</label>
+          <input class="form-control" type="number" name="endTime" placeholder="10">
+        </div>
+      </div>
+      <button id="addTimeRange" class="btn btn-secondary mb-3">Add Time Range</button>
+      <button id="trimButton" class="btn btn-primary">Trim Video</button>
+      <h2 class="mt-5">Trimmed Videos</h2>
+      <div id="outputVideos"></div>
+    </div>
+    <script>
+      document.getElementById('addTimeRange').addEventListener('click', () => {
+        const timeRangeDiv = document.createElement('div');
+        timeRangeDiv.className = 'time-range mb-3';
+        timeRangeDiv.innerHTML = `
+          <label for="startTime" class="form-label">Start Time (seconds)</label>
+          <input class="form-control" type="number" name="startTime" placeholder="0">
+          <label for="endTime" class="form-label">End Time (seconds)</label>
+          <input class="form-control" type="number" name="endTime" placeholder="10">
+        `;
+        document.getElementById('timeRanges').appendChild(timeRangeDiv);
+      });
+
+      document.getElementById('trimButton').addEventListener('click', async () => {
+        const videoFile = document.getElementById('videoFile').files[0];
+        const startTimes = Array.from(document.getElementsByName('startTime')).map(input => input.value);
+        const endTimes = Array.from(document.getElementsByName('endTime')).map(input => input.value);
+
+        if (!videoFile || startTimes.some(start => !start) || endTimes.some(end => !end)) {
+          alert('Please provide all inputs');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('videoFile', videoFile);
+        startTimes.forEach((start, index) => {
+          formData.append(`startTime_${index}`, start);
+        });
+        endTimes.forEach((end, index) => {
+          formData.append(`endTime_${index}`, end);
+        });
+
+        const response = await fetch('/trim', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          const videoUrls = await response.json();
+          const outputVideosDiv = document.getElementById('outputVideos');
+          outputVideosDiv.innerHTML = '';
+          videoUrls.forEach(url => {
+            const videoElement = document.createElement('video');
+            videoElement.controls = true;
+            videoElement.src = url;
+            videoElement.className = 'mt-3';
+            outputVideosDiv.appendChild(videoElement);
+          });
+        } else {
+          alert('Error trimming video. See console for details.');
+        }
+      });
+    </script>
+  </body>
+</html> -->
+
+
+<!--
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+    crossorigin="anonymous"
+  />
+  <style>
+    .video-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .video-container video {
+      width: 100%;
+      max-width: 200px;
+    }
+  </style>
+  <title>Trim video in browser using ffmpeg</title>
+</head>
+<body>
+  <div class="container mt-5">
+    <h1>Trim Video</h1>
+    <div class="mb-3">
+      <label for="videoFile" class="form-label">Upload Video</label>
+      <input class="form-control" type="file" id="videoFile" accept="video/*" required>
+    </div>
+    <div class="mb-3">
+      <label for="duration" class="form-label">Duration of Each Segment (seconds)</label>
+      <input class="form-control" type="number" id="duration" placeholder="5" required>
+    </div>
+    <button id="trimButton" class="btn btn-primary">Trim Video</button>
+    <h2 class="mt-5">Trimmed Videos</h2>
+    <div id="outputVideos" class="video-container"></div>
+  </div>
+  <script>
+    document.getElementById('trimButton').addEventListener('click', async () => {
+      const videoFile = document.getElementById('videoFile').files[0];
+      const duration = document.getElementById('duration').value;
+
+      if (!videoFile || !duration) {
+        alert('Please provide all inputs');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('videoFile', videoFile);
+      formData.append('duration', duration);
+
+      const response = await fetch('/trim', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const videoUrls = await response.json();
+        const outputVideosDiv = document.getElementById('outputVideos');
+        outputVideosDiv.innerHTML = '';
+        videoUrls.forEach(url => {
+          const videoElement = document.createElement('video');
+          videoElement.controls = true;
+          videoElement.src = url;
+          videoElement.className = 'mt-3';
+          outputVideosDiv.appendChild(videoElement);
+        });
+      } else {
+        alert('Error trimming video. See console for details.');
+      }
+    });
+  </script>
+</body>
+</html> -->
+
+
+<!-- all trim -->
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+    crossorigin="anonymous"
+  />
+  <style>
+    .video-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .video-card {
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+    }
+    .video-card video {
+      width: 100%;
+      max-width: 200px;
+      margin-bottom: 10px;
+    }
+  </style>
+  <title>Trim Video in Browser using FFmpeg</title>
+</head>
+<body>
+  <div class="container mt-5">
+    <h1>Trim Video</h1>
+    <div class="mb-3">
+      <label for="videoFile" class="form-label">Upload Video</label>
+      <input class="form-control" type="file" id="videoFile" accept="video/*" required>
+    </div>
+    <div class="mb-3">
+      <label for="duration" class="form-label">Duration of Each Segment (seconds)</label>
+      <input class="form-control" type="number" id="duration" placeholder="5" required>
+    </div>
+    <button id="trimButton" class="btn btn-primary">Trim Video</button>
+    <button id="downloadAllButton" class="btn btn-success mt-3" style="display:none;">Download All</button>
+    <h2 class="mt-5">Trimmed Videos</h2>
+    <div id="outputVideos" class="video-container"></div>
+  </div>
+  <script>
+    document.getElementById('trimButton').addEventListener('click', async () => {
+      const videoFile = document.getElementById('videoFile').files[0];
+      const duration = document.getElementById('duration').value;
+
+      if (!videoFile || !duration) {
+        alert('Please provide all inputs');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('videoFile', videoFile);
+      formData.append('duration', duration);
+
+      const response = await fetch('/trim', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const videoUrls = await response.json();
+        const outputVideosDiv = document.getElementById('outputVideos');
+        outputVideosDiv.innerHTML = '';
+
+        videoUrls.forEach((url, index) => {
+          const videoCard = document.createElement('div');
+          videoCard.className = 'video-card';
+
+          const videoElement = document.createElement('video');
+          videoElement.controls = true;
+          videoElement.src = url;
+          videoCard.appendChild(videoElement);
+
+          const downloadButton = document.createElement('a');
+          downloadButton.href = url;
+          downloadButton.download = `trimmed-video-${index + 1}.mp4`;
+          downloadButton.className = 'btn btn-secondary mt-2';
+          downloadButton.textContent = 'Download';
+          videoCard.appendChild(downloadButton);
+
+          outputVideosDiv.appendChild(videoCard);
+        });
+
+        document.getElementById('downloadAllButton').style.display = 'inline-block';
+        document.getElementById('downloadAllButton').addEventListener('click', () => {
+          videoUrls.forEach((url, index) => {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `trimmed-video-${index + 1}.mp4`;
+            a.click();
+          });
+        });
+      } else {
+        alert('Error trimming video. See console for details.');
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Trimmer</title>
+</head>
+<body>
+    <h1>Video Trimmer</h1>
+
+    Upload Video Form
+    <form id="uploadForm" enctype="multipart/form-data">
+        <h2>Upload Video</h2>
+        <input type="file" name="videoFile" id="videoFile" required>
+        <input type="number" name="duration" id="duration" placeholder="Segment Duration (seconds)" required>
+        <button type="submit">Upload & Trim</button>
+    </form>
+
+   Trim from URL Form -->
+    <!-- <form id="urlForm">
+        <h2>Trim from URL</h2>
+        <input type="text" id="videoUrl" placeholder="Video URL" required>
+        <input type="number" id="urlDuration" placeholder="Segment Duration (seconds)" required>
+        <button type="submit">Trim Video</button>
+    </form>
+
+    <h2>Trimmed Videos</h2>
+    <div id="result"></div>
+
+    <script src="index.js"></script>
+</body>
+</html> -->
